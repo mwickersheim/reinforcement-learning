@@ -9,3 +9,4 @@ atari_py
 Box2D==2.3.10
 gym-super-mario-bros==7.3.2
 matplotlib==3.4.2
+highway-env==1.2
