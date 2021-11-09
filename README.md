@@ -108,6 +108,15 @@ https://user-images.githubusercontent.com/8986329/123638469-e3acaa00-d827-11eb-9
 
 ---  
 
+#### [Racetrack environnment](https://highway-env.readthedocs.io/en/latest/environments/racetrack.html)  
+
+https://user-images.githubusercontent.com/8986329/141018035-f343bc52-a422-49fe-ae98-30e18dd7d17b.mp4
+
+[**PPO+GAE**](https://github.com/dredwardhyde/reinforcement-learning/blob/main/highway_environments/racetrack_ppo.py)  
+[Checkpoint weights](https://github.com/dredwardhyde/reinforcement-learning/blob/main/highway_environments/racetrack_ppo/checkpoint_300.pth)  
+
+---  
+
 ### PyBullet Walker2D environment  
 
 https://user-images.githubusercontent.com/8986329/123640398-cb3d8f00-d829-11eb-8619-0688a4035ff7.mp4
