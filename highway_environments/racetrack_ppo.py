@@ -56,7 +56,7 @@ class PPOSolver:
         self.rewards = []
         self.gamma = 0.99
         self.lamda = 0.95
-        self.worker_steps = 4096
+        self.worker_steps = 1024
         self.n_mini_batch = 4
         self.epochs = 30
         self.save_directory = "./racetrack_ppo"
@@ -173,4 +173,4 @@ class PPOSolver:
 
 solver = PPOSolver()
 while True:
-    solver.train(solver.sample(), 0.2)
+    solver.train(solver.sample(), 0.05)
