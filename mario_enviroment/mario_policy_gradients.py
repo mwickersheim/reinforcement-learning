@@ -10,6 +10,13 @@ from torch.distributions import Categorical
 from gym.spaces import Box
 import matplotlib.pyplot as plt
 import gym
+from gym_super_mario_bros.actions import RIGHT_ONLY, SIMPLE_MOVEMENT, COMPLEX_MOVEMENT
+
+
+if torch.cuda.is_available():
+    device = "cuda"
+else:
+    device = "cpu"
 
 
 class SkipFrame(gym.Wrapper):
@@ -50,8 +57,8 @@ class ResizeObservation(gym.ObservationWrapper):
         return transformations(observation).squeeze(0)
 
 
-env = gym_super_mario_bros.make('SuperMarioBros-1-1-v0')
-env = JoypadSpace(env, [["right"], ["right", "A"]])
+env = gym_super_mario_bros.make('SuperMarioBros-v0')
+env = JoypadSpace(env, COMPLEX_MOVEMENT)
 env = FrameStack(ResizeObservation(GrayScaleObservation(SkipFrame(env, skip=4)), shape=84), num_stack=4)
 env.seed(42)
 env.action_space.seed(42)
@@ -74,7 +81,7 @@ class MarioSolver:
             nn.ReLU(),
             nn.Linear(512, env.action_space.n),
             nn.Softmax(dim=-1)
-        ).cuda()
+        ).to(device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, eps=1e-4)
         self.reset()
 
@@ -82,7 +89,7 @@ class MarioSolver:
         return self.model(x)
 
     def reset(self):
-        self.episode_actions = torch.tensor([], requires_grad=True).cuda()
+        self.episode_actions = torch.tensor([], requires_grad=True).to(device)
         self.episode_rewards = []
 
     def save_checkpoint(self, directory, episode):
@@ -103,7 +110,7 @@ class MarioSolver:
         for r in self.episode_rewards[::-1]:
             future_reward = r + gamma * future_reward
             rewards.append(future_reward)
-        rewards = torch.tensor(rewards[::-1], dtype=torch.float32).cuda()
+        rewards = torch.tensor(rewards[::-1], dtype=torch.float32).to(device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps)
         loss = torch.sum(torch.mul(self.episode_actions, rewards).mul(-1))
         self.optimizer.zero_grad()
@@ -112,14 +119,15 @@ class MarioSolver:
         self.reset()
 
 
-batch_size = 10
+batch_size = 250
+episode_size = 1000
 gamma = 0.95
-load_filename = None
-save_directory = "./mario_pg"
+load_filename = "checkpoint_13000.pth"
+save_directory = "./mario_pg_mike"
 batch_rewards = []
 episode = 0
 
-model = MarioSolver(learning_rate=0.00025)
+model = MarioSolver(learning_rate=0.000025)
 if load_filename is not None:
     episode = model.load_checkpoint(save_directory, load_filename)
 all_episode_rewards = []
@@ -129,7 +137,7 @@ while True:
     done = False
     while not done:
         env.render()
-        observation = torch.tensor(observation.__array__()).cuda().unsqueeze(0)
+        observation = torch.tensor(observation.__array__()).to(device).unsqueeze(0)
         distribution = Categorical(model.forward(observation))
         action = distribution.sample()
         observation, reward, done, _ = env.step(action.item())
@@ -147,5 +155,5 @@ while True:
                 plt.plot(all_mean_rewards)
                 plt.savefig("{}/mean_reward_{}.png".format(save_directory, episode))
                 plt.clf()
-            if episode % 50 == 0 and save_directory is not None:
+            if episode % episode_size == 0 and save_directory is not None:
                 model.save_checkpoint(save_directory, episode)
